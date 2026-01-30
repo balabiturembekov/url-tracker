@@ -2,43 +2,51 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Safari History Report</title>
+    <title>Safari Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; padding: 50px; background: #f4f4f9; }
-        .card { width: 850px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h2 { color: #2c3e50; text-align: center; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { color: #1a73e8; text-align: center; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2>Top 10 Domains (Last 7 Days)</h2>
-        <canvas id="myChart"></canvas>
+    <div class="grid">
+        <div class="card">
+            <h2>Top 10 Domains</h2>
+            <canvas id="domainChart"></canvas>
+        </div>
+        <div class="card">
+            <h2>Activity by Hour</h2>
+            <canvas id="hourChart"></canvas>
+        </div>
     </div>
     <script>
         window.onload = function() {
-            if (typeof window.Chart === 'undefined') {
-                alert('Ошибка: Chart.js не загрузился. Проверьте интернет!');
-                return;
-            }
-            
-            const ctx = document.getElementById('myChart');
-            new Chart(ctx, {
+            new Chart(document.getElementById('domainChart'), {
                 type: 'bar',
                 data: {
                     labels: [CHART_LABELS],
-                    datasets: [{
-                        label: 'Визиты',
-                        data: [CHART_DATA],
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2
+                    datasets: [{ label: 'Visits', data: [CHART_DATA], backgroundColor: '#34a853' }]
+                },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+
+            new Chart(document.getElementById('hourChart'), {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i + ':00'),
+                    datasets: [{ 
+                        label: 'Activity', 
+                        data: [HOURLY_DATA], 
+                        borderColor: '#1a73e8', 
+                        backgroundColor: 'rgba(26, 115, 232, 0.1)',
+                        fill: true,
+                        tension: 0.4 
                     }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    plugins: { legend: { display: false } }
-                }
+                options: { plugins: { legend: { display: false } } }
             });
         };
     </script>
