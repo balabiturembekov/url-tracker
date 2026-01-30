@@ -1,7 +1,9 @@
-use rusqlite::{Connection, Result};
+use anyhow::{Context, Result};
+use rusqlite::Connection;
 use std::env;
 use std::fs;
 use std::path::Path;
+use tracing::{debug, warn};
 
 pub struct SafariProvider;
 
@@ -10,9 +12,11 @@ impl SafariProvider {
     const TEMP_DB: &'static str = "/tmp/safari_history_copy";
 
     pub fn fetch_history(days: u32) -> Result<Vec<(String, u32)>> {
-        Self::prepare_db_copy()?;
+        debug!("Начинаю сбор истории за последние {} дней", days);
+        Self::prepare_db_copy().context("Ошибка при подготовке копии базы данных")?;
 
-        let conn = Connection::open(Self::TEMP_DB)?;
+        let conn =
+            Connection::open(Self::TEMP_DB).context("Не удалось открыть Sqlite соединение")?;
         let mut stmt = conn.prepare(&format!(
             "
             SELECT i.url, COUNT(v.id)
@@ -39,13 +43,16 @@ impl SafariProvider {
     }
 
     fn prepare_db_copy() -> Result<()> {
-        let home = env::var("HOME").expect("HOME not found!");
+        let home = env::var("HOME").context("Переменная окружения HOME не задана")?;
         let src = Path::new(&home).join(Self::DB_PATH);
 
+        debug!("Копируем базу из {:?} в {}", src, Self::TEMP_DB);
+
         if let Err(e) = fs::copy(&src, Self::TEMP_DB) {
-            eprintln!("❌ Ошибка копирования базы: {}", e);
-            return Err(rusqlite::Error::InvalidPath(src));
+            warn!("Файл базы не найден или нет прав. Проверьте Full Disk Access.");
+            return Err(anyhow::anyhow!("fs::copy failed: {}", e));
         }
+
         Ok(())
     }
 }

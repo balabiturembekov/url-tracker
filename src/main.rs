@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::Parser;
 use std::process::Command;
 
@@ -7,23 +8,31 @@ mod tracker;
 
 use config::Config;
 use provider::SafariProvider;
+use tracing::{Level, info};
 use tracker::Tracker;
 
-fn main() -> rusqlite::Result<()> {
+fn main() -> anyhow::Result<()> {
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
+
     let cfg = Config::parse();
 
     let mut tracker = Tracker::new();
 
-    for (url, count) in SafariProvider::fetch_history(cfg.days)? {
+    let history =
+        SafariProvider::fetch_history(cfg.days).context("Не удалось получить данные из Safari")?;
+
+    for (url, count) in history {
         tracker.process_record(url, count);
     }
 
     tracker.display(cfg.limit, cfg.filter.as_ref());
 
-    if tracker.export_html(&cfg.output).is_ok() {
-        println!("\n✅ Отчет сохранен в {}", cfg.output);
-        let _ = Command::new("open").arg(&cfg.output).spawn();
-    }
+    let filename = &cfg.output;
+    tracker
+        .export_html(filename)
+        .context("Ошибка при экспорте в HTML")?;
+    info!("Отчет успешно сформирован: {}", filename);
+    let _ = Command::new("open").arg(filename).spawn();
     Ok(())
 }
 

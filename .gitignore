@@ -1,1 +1,3 @@
 /target
+*.html
+!src/report_template.html
