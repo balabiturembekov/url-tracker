@@ -65,62 +65,23 @@ impl Tracker {
         sorted.sort_by(|a, b| b.1.cmp(a.1));
         let top_10: Vec<_> = sorted.into_iter().take(10).collect();
 
-        let labels: Vec<String> = top_10.iter().map(|(d, _)| format!("\"{}\"", d)).collect();
-        let data: Vec<String> = top_10.iter().map(|(_, c)| c.to_string()).collect();
+        let labels_str = top_10
+            .iter()
+            .map(|(d, _)| format!("\"{}\"", d))
+            .collect::<Vec<String>>()
+            .join(",");
 
-        let labels_str = labels.join(",");
-        let data_str = data.join(",");
+        let data_str = top_10
+            .iter()
+            .map(|(_, c)| c.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
 
-        let html = format!(
-            r#"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Safari History Report</title>
-    <!-- Используем Cloudflare CDN — он стабильнее -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {{ font-family: -apple-system, sans-serif; display: flex; justify-content: center; padding: 50px; background: #f4f4f9; }}
-        .card {{ width: 850px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }}
-        h2 {{ color: #2c3e50; text-align: center; margin-bottom: 30px; }}
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>Top 10 Domains (Last 7 Days)</h2>
-        <canvas id="myChart"></canvas>
-    </div>
-    <script>
-        // Проверяем, загрузился ли Chart
-        if (typeof Chart === 'undefined') {{
-            document.body.innerHTML = '<h1 style="color:red">Ошибка: Chart.js не загрузился. Проверьте интернет!</h1>';
-        }} else {{
-            const ctx = document.getElementById('myChart').getContext('2d');
-            new Chart(ctx, {{
-                type: 'bar',
-                data: {{
-                    labels: [{labels_str}],
-                    datasets: [{{
-                        label: 'Визиты',
-                        data: [{data_str}],
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2
-                    }}]
-                }},
-                options: {{
-                    indexAxis: 'y',
-                    plugins: {{ legend: {{ display: false }} }}
-                }}
-            }});
-        }}
-    </script>
-</body>
-</html>"#,
-            labels_str = labels_str,
-            data_str = data_str
-        );
+        let template = include_str!("report_template.html");
+
+        let html = template
+            .replace("CHART_LABELS", &labels_str)
+            .replace("CHART_DATA", &data_str);
 
         fs::write(filename, html)?;
         println!("\n✅ Отчет готов: {}", filename);
