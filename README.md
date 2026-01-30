@@ -1,3 +1,8 @@
+![Rust](https://img.shields.io)
+![Platform](https://img.shields.io)
+![License](https://img.shields.io)
+![Build Status](https://github.com)
+
 # 🌍 Safari URL Tracker
 
 Быстрая консольная утилита на **Rust**, которая анализирует историю посещений Safari, строит отчет в терминале и генерирует интерактивные HTML-дашборды с графиками.
@@ -34,3 +39,10 @@
 
    # Показать ТОП-10 и отфильтровать только .kz домены
    cargo run -- 10 .kz
+
+## 🗺 Roadmap
+- [ ] Support for Google Chrome & Arc browsers.
+- [ ] Productivity detector (categorizing domains).
+- [ ] Export to PDF/CSV.
+- [ ] Interactive filtering directly in the HTML report.
+
