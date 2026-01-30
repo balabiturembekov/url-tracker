@@ -9,19 +9,20 @@ impl SafariProvider {
     const DB_PATH: &'static str = "Library/Safari/History.db";
     const TEMP_DB: &'static str = "/tmp/safari_history_copy";
 
-    pub fn fetch_history() -> Result<Vec<(String, u32)>> {
+    pub fn fetch_history(days: u32) -> Result<Vec<(String, u32)>> {
         Self::prepare_db_copy()?;
 
         let conn = Connection::open(Self::TEMP_DB)?;
-        let mut stmt = conn.prepare(
+        let mut stmt = conn.prepare(&format!(
             "
             SELECT i.url, COUNT(v.id)
             FROM history_items i
             JOIN history_visits v ON i.id = v.history_item
-            WHERE v.visit_time > (strftime('%s', 'now') - 978307200 - 7 * 24 * 3600)
+            WHERE v.visit_time > (strftime('%s', 'now') - 978307200 - {} * 24 * 3600)
             GROUP BY i.url
             ",
-        )?;
+            days
+        ))?;
 
         let rows = stmt.query_map([], |row| {
             let url: String = row.get(0)?;
